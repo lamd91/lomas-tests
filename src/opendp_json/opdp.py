@@ -1,96 +1,45 @@
-import opendp.combinators as comb
-import opendp.measurements as meas
-import opendp.transformations  as trans
 from opendp.mod import enable_features
-enable_features('contrib')
+enable_features('contrib', 'floating-point')
 from fastapi import HTTPException
-# print("comb:", comb)
-# print("meas:", meas)
-# print("trans:", trans)
-
-from typing import Literal
-import json
-import yaml
-import re
-import builtins
 
 import globals
 
-PT_TYPE = "^py_type:*"
 
-def cast_str_to_type(d):
-    for k, v in d.items():
-        if isinstance(v, dict):
-            cast_str_to_type(v)
-        elif isinstance(v, str):
-            if re.search(PT_TYPE, v):
-                d[k] = getattr(builtins, v[8:])
-    return d
+def opendp_apply(client_measurement):
+    from opendp.transformations import make_split_dataframe
+    col_names = list(globals.TRAIN.columns)
+    df_pipe = make_split_dataframe(',', col_names)
 
-def jsonOpenDPDecoder(obj):
-    if "_tuple" in obj.keys():
-        return tuple(obj["_items"])
-    if isinstance(obj, dict):
-        return cast_str_to_type(obj)
-    return obj
-
-def cast_type_to_str(d):
-    for k, v in d.items():
-        if isinstance(v, dict):
-            cast_type_to_str(v)
-        elif isinstance(v, type):
-            d[k] = "pytype_"+str(v.__name__)
-    return d
-
-def tree_walker(branch):
-    if branch["module"] == "trans":
-        module = trans
-    elif branch["module"] == "meas":
-        module = meas
-    elif branch["module"] == "comb":
-        args = list(branch["args"])
-        for i in range(len(branch["args"])):
-            if isinstance(args[i], dict):
-                args[i] = tree_walker(args[i])
-        branch["args"] = tuple(args)
-
-        for k, v in branch["kwargs"]:
-            if isinstance(v, dict):
-                branch["kwargs"][k] = tree_walker(v)
-
-        module = comb
-    else:
-        raise ValueError(f"Type {branch['type']} not in Literal[\"Transformation\", \"Measurement\", \"Combination\"].")
-
-    return getattr(module, branch["func"])(*branch["args"], **branch["kwargs"])
-
-def opendp_constructor(parse_str: str):
-    obj = json.loads(parse_str, object_hook=jsonOpenDPDecoder)
-
-    if obj["version"] != globals.OPENDP_VERSION:
-        raise ValueError(
-            f"OpenDP version in parsed object ({obj['version']}) does not match the current installation ({globals.OPENDP_VERSION})."
-            )
-    
-    return tree_walker(obj["ast"])
-
-
-def opendp_apply(opdp_pipe):
+    # ensure that the start of the pipeline is a dataframe transformation
     try:
-        release_data = opdp_pipe(globals.TRAIN.to_csv())
+        full_meas = df_pipe >> client_measurement
     except Exception as e:
         globals.LOG.exception(e)
-        raise HTTPException(400, "Failed when applying chain to data with error: " + str(e))
+        raise HTTPException(400, "Failed when attempting to chain `make_split_dataframe(',', col_names) >> client_measurement`:\n" + str(e))
+
+    # attempt to compute the privacy utilization of the measurement, an individual may influence one row
     try:
-        e, d = opdp_pipe.map(d_in=1.)
+        usage = full_meas.map(d_in=1)
     except Exception as ex:
-        try:
-            e, d = opdp_pipe.map(d_in=1)
-        except Exception as ex:
-            globals.LOG.exception(ex)
-            raise HTTPException(400, 'Error obtaining privacy map for the chain. Please ensure methods return epsilon, and delta in privacy map. Error:' + str(e))
+        globals.LOG.exception(ex)
+        raise HTTPException(400, 'Error evaluating privacy map for the chain. Error:' + str(e))
+    
+    # unpack the privacy usage
+    try: 
+        e, d = usage
+    except:
+        raise HTTPException(400, "Please ensure the privacy map returns an (ε, δ) tuple: https://docs.opendp.org/en/stable/user/constructors/combinators.html#measure-casting")
+    
     if e > globals.EPSILON_LIMIT:
         raise HTTPException(400, f"Chain constructed uses epsilon > {globals.EPSILON_LIMIT}, please update and retry")
     if d > globals.DELTA_LIMIT:
         raise HTTPException(400, f"Chain constructed uses delta > {globals.DELTA_LIMIT}, please update and retry")
-    return release_data, (e,d)
+
+    # invoke the measurement
+    try:
+        release_data = full_meas(globals.TRAIN.to_csv(header=False, index=False))
+    except Exception as e:
+        globals.LOG.exception(e)
+        raise HTTPException(400, "Failed when applying chain to data with error: " + str(e))
+    
+    return release_data, (e, d)

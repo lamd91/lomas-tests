@@ -13,7 +13,8 @@ from mongodb.db_functions import (db_add_query, db_add_submission,
                                   db_add_teams, db_get_accuracy, db_get_budget,
                                   db_get_delta, db_get_leaderboard, db_get_score)
 from mongodb.db_models import QueryDBInput, SubmissionDBInput
-from opendp_json.opdp import opendp_constructor, opendp_apply
+from opendp_logger import make_load_json
+from opendp_json.opdp import opendp_apply
 # from oracle.stats import DPStats
 from oracle.accuracy import accuracy as oracle_accuracy
 from smartnoise_json.synth import synth
@@ -78,12 +79,13 @@ async def get_state(x_oblv_user_name: str = Header(None)):
 def opendp_handler(pipeline_json: OpenDPInp = Body(example_opendp), x_oblv_user_name: str = Header(None)):
     
     try:
-        opendp_pipe = opendp_constructor(pipeline_json.toJSONStr())
+        opendp_pipe = make_load_json(pipeline_json.toJSONStr())
     except Exception as e:
         LOG.exception(e)
         raise HTTPException(500, "Failed while contructing opendp pipeline with error: " + str(e))
+    
     try:
-        response, privacy_map = opendp_apply(opendp_pipe)
+        response, (epsilon, delta) = opendp_apply(opendp_pipe)
     except HTTPException as he:
         LOG.exception(he)
         raise he
@@ -92,11 +94,11 @@ def opendp_handler(pipeline_json: OpenDPInp = Body(example_opendp), x_oblv_user_
         raise HTTPException(500, str(e))
         
     query = QueryDBInput(x_oblv_user_name,pipeline_json,"opendp")
-    query.query.epsilon = privacy_map[0]
-    query.query.delta = privacy_map[1]
+
+    query.query.epsilon = epsilon
+    query.query.delta = delta
     query.query.response = str(response)
     db_add_query(query)
-
 
     return response
 
