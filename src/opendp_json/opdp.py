@@ -6,20 +6,9 @@ import globals
 
 
 def opendp_apply(client_measurement):
-    from opendp.transformations import make_split_dataframe
-    col_names = list(globals.TRAIN.columns)
-    df_pipe = make_split_dataframe(',', col_names)
-
-    # ensure that the start of the pipeline is a dataframe transformation
-    try:
-        full_meas = df_pipe >> client_measurement
-    except Exception as e:
-        globals.LOG.exception(e)
-        raise HTTPException(400, "Failed when attempting to chain `make_split_dataframe(',', col_names) >> client_measurement`:\n" + str(e))
-
     # attempt to compute the privacy utilization of the measurement, an individual may influence one row
     try:
-        usage = full_meas.map(d_in=1)
+        usage = client_measurement.map(d_in=1)
     except Exception as ex:
         globals.LOG.exception(ex)
         raise HTTPException(400, 'Error evaluating privacy map for the chain. Error:' + str(e))
@@ -37,7 +26,7 @@ def opendp_apply(client_measurement):
 
     # invoke the measurement
     try:
-        release_data = full_meas(globals.TRAIN.to_csv(header=False, index=False))
+        release_data = client_measurement(globals.TRAIN.to_csv(header=False, index=False))
     except Exception as e:
         globals.LOG.exception(e)
         raise HTTPException(400, "Failed when applying chain to data with error: " + str(e))
