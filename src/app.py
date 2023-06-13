@@ -98,6 +98,30 @@ def smartnoise_sql_handler(
     return response
 
 
+# Smartnoise SQL query
+@app.post(
+    "/estimate_cost",
+    dependencies=[Depends(server_live)],
+    tags=["OBLV_PARTICIPANT_USER"],
+)
+def estimate_cost(
+    query_json: SNSQLInp = Body(example_smartnoise_sql),
+    user_name: str = Header(None),
+):
+    # Catch all non-http exceptions so that the server does not fail.
+    try:
+        response = globals.QUERY_HANDLER.estimate_cost(
+            "smartnoise_sql", query_json
+        )
+    except HTTPException as e:
+        raise e
+    except Exception:
+        raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR)
+
+    # Return response
+    return response
+
+
 @app.get("/submit_limit", dependencies=[Depends(server_live)])
 async def get_submit_limit():
     """
