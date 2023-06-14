@@ -106,7 +106,6 @@ def smartnoise_sql_handler(
 )
 def estimate_cost(
     query_json: SNSQLInp = Body(example_smartnoise_sql),
-    user_name: str = Header(None),
 ):
     # Catch all non-http exceptions so that the server does not fail.
     try:

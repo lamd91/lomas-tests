@@ -185,10 +185,10 @@ class QueryHandler:
         dp_querier = self._get_querier(query_type, query_json)
 
         # Get cost of the query
-        epsilon_cost, delta_cost = dp_querier.cost(
+        eps_cost, delta_cost = dp_querier.cost(
             query_json.query_str, query_json.epsilon, query_json.delta
         )
-        response = {"epsilon_cost": epsilon_cost, "delta_cost": delta_cost}
+        response = {"epsilon_cost": eps_cost, "delta_cost": delta_cost}
         return response
 
     def handle_query(
