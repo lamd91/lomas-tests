@@ -205,10 +205,11 @@ class QueryHandler:
                 f"User {user_name} is trying to query before end of \
                 previous query. Returning without response."
             )
-            return {
-                "requested_by": user_name,
-                "state": "No response. Already a query running.",
-            }
+            if globals.CONFIG.develop_mode:
+                LOG.info(f"Develop mode ON: Re-enabling query for user {user_name}")
+                self.database.set_may_user_query(user_name, True)
+            else:
+                raise HTTPException(500, f"User {user_name} already querying")
 
         # Block access to other queries to user
         self.database.set_may_user_query(user_name, False)

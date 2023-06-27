@@ -57,6 +57,9 @@ class SmartnoiseSQLQuerier(DPQuerier):
             )
         else:
             self.df = pd.read_csv(csv_path)
+        
+        # TODO: Fix later
+        self.df = self.df.dropna()
 
     def cost(self, query_str: str, eps: float, delta: float) -> List[float]:
         privacy = Privacy(epsilon=eps, delta=delta)
@@ -82,7 +85,22 @@ class SmartnoiseSQLQuerier(DPQuerier):
         )
 
         try:
+            from utils.loggr import LOG
+            LOG.warning("BEFORE SQL")
+            LOG.warning(eps)
+            LOG.warning(delta)
+            LOG.warning(privacy)
+            LOG.warning(self.df.head())
+            LOG.warning(self.df.columns)
+            LOG.warning(self.df.shape)
+            self.df.drop('primary_key', inplace=True, axis=1)
+            LOG.warning(self.df.head())
+            LOG.warning(self.df.columns)
+            LOG.warning(self.df.shape)
+            LOG.warning(self.metadata)
+            LOG.warning(query_str)
             result = reader.execute(query_str)
+            LOG.warning("AFTER SQL")
         except Exception as err:
             raise HTTPException(
                 400,
