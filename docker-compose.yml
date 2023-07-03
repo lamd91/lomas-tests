@@ -1,6 +1,6 @@
 version: '3.4'
 services:
-  sdd_poc_server:
+  sdd-poc-server:
     image: sdd_server_dev
     build:
       dockerfile: ./Dockerfile
@@ -10,7 +10,7 @@ services:
     restart: always
     volumes:
       - ./src:/code/
-      - ./configs/example_config.yaml:/usr/sdd_poc_server/runtime.yaml
+      - ./configs/example_config.yaml:/usr/sdd-poc-server/runtime.yaml
     depends_on:
       - mongodb
     networks:
