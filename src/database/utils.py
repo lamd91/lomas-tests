@@ -19,9 +19,9 @@ def database_factory(config: DBConfig) -> Database:
 
     elif db_type == CONF_DB_TYPE_MONGODB:
         db_addr = config.address
-        db_port = config.port
+        #db_port = config.port
 
-        db_url = f"mongodb://{db_addr}:{db_port}/"
+        db_url = f"mongodb://{db_addr}" #:{db_port}/"
 
         return MongoDB_Database(db_url)
 

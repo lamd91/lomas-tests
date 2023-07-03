@@ -1,0 +1,4 @@
+jupyter:
+  ingress:
+    enabled: true
+    hostname: jupyter.devoxx.insee.io

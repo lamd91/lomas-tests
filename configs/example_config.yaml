@@ -6,9 +6,9 @@ runtime_args:
         method: "jitter" # or "stall"
         magnitude: 1
     database:
-      db_type: "mongodb" # or "yaml"
-      address: "mongodb" # or db_file: <..> for yaml db
-      port: 27017
+      db_type: "mongodb"
+      address: "mongodb://${MONGO_USERNAME}:${MONGO_PWD}@mongodb-0.mongodb-headless:27017,mongodb-1.mongodb-headless:27017/defaultdb?authSourcedefaultdb"
+      #port: 27017
       #db_type: "yaml"
       #db_file: "/usr/sdd_poc_server/user_database.yaml"
 
