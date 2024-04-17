@@ -1,0 +1,18 @@
+apiVersion: v1
+entries:
+  lomas-server:
+  - apiVersion: v2
+    appVersion: 0.0.0
+    created: "2024-04-17T14:21:38.892261502Z"
+    dependencies:
+    - name: mongodb
+      repository: oci://registry-1.docker.io/bitnamicharts
+      version: 13.18.1
+    description: FSO's Secure Data Disclosure deployment chart
+    digest: 228a2d9c254d2de1dfc8ae8e8bccf93639de6ff16a062e9c7bd1411c7550142a
+    name: lomas-server
+    type: application
+    urls:
+    - https://github.com/dscc-admin-ch/lomas/releases/download/lomas-server-0.0.1/lomas-server-0.0.1.tgz
+    version: 0.0.1
+generated: "2024-04-17T14:21:38.892273204Z"
