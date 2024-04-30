@@ -87,6 +87,12 @@ def startup_event() -> None:
 
         args = SimpleNamespace(**vars(CONFIG.admin_database))
 
+        args.username = CONFIG.admin_database.username
+        args.password = CONFIG.admin_database.password
+        args.address = CONFIG.admin_database.address
+        args.port = CONFIG.admin_database.port
+        args.db_name = CONFIG.admin_database.db_name
+
         LOG.info("Creating user collection")
         args.clean = True
         args.overwrite = True
