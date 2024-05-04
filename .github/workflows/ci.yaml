@@ -1,0 +1,21 @@
+name: CI
+
+on: 
+  pull_request:
+    branches: [ develop ]
+  workflow_dispatch:
+  
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Run application stack
+      run: |
+        docker volume create mongodata
+        docker compose -f server/docker-compose.yml up --build -d
+    - name: Show running containers
+      run: docker ps
+    - name: Run FastAPI tests
+        docker exec lomas_server_dev python -m unittest discover -s .
