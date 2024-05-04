@@ -18,4 +18,4 @@ jobs:
     - name: Show running containers
       run: docker ps
     - name: Run FastAPI tests
-        docker exec lomas_server_dev python -m unittest discover -s .
+      run: docker exec lomas_server_dev python -m unittest discover -s .
